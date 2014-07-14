@@ -22,7 +22,7 @@ public class CacheWordService extends Service {
 
     private final IBinder mBinder = new CacheWordBinder();
 
-    //private ICachedSecrets mSecrets = null;
+    private ICachedSecrets mSecrets = null;
 
     private PendingIntent mTimeoutIntent;
     private Intent mBroadcastIntent = new Intent(Constants.INTENT_NEW_SECRETS);

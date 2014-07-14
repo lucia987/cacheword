@@ -1,6 +1,9 @@
 
 package info.guardianproject.cacheword;
 
+import java.security.GeneralSecurityException;
+
+import jni.PrivateDataHandler;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -10,8 +13,6 @@ import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-
-import java.security.GeneralSecurityException;
 
 /**
  * This class is designed to accompany any Activity that is interested in the

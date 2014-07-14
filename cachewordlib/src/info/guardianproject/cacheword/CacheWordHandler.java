@@ -143,6 +143,18 @@ public class CacheWordHandler {
         }
         setCachedSecrets(ps);
     }
+    
+    /* Added by Lucia */
+    public void setPassphrase(PrivateDataHandler passphrase) throws GeneralSecurityException {
+        final PassphraseSecrets ps;
+        if(SecretsManager.isInitialized(mContext)) {
+            ps = PassphraseSecrets.fetchSecrets(mContext, passphrase);
+        } else {
+            ps = PassphraseSecrets.initializeSecrets(mContext, passphrase);
+        }
+        setCachedSecrets(ps);
+    }
+    
 
     /**
      * Clear the secrets from memory. This is only a request to CacheWord. The
@@ -276,3 +288,4 @@ public class CacheWordHandler {
     };
 
 }
+

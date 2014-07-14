@@ -1,9 +1,6 @@
 
 package info.guardianproject.cacheword;
 
-import android.content.Context;
-import android.util.Log;
-
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
@@ -16,6 +13,11 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+
+import jni.PrivateData;
+import jni.PrivateDataHandler;
+import android.content.Context;
+import android.util.Log;
 
 /**
  * The simplest of cases where the application's only secret is the user's
@@ -75,6 +77,38 @@ public class PassphraseSecrets implements ICachedSecrets {
         }
     }
 
+    /* Added by Lucia */
+    public static PassphraseSecrets initializeSecrets(Context ctx, PrivateDataHandler x_passphrase) {
+        //SecretKeySpec x_passphraseKey = null;
+        PrivateDataHandler x_passphraseKey = null;
+    	try {
+            byte[] salt               = generateSalt(Constants.SALT_LENGTH);
+            byte[] iv                 = generateIv(Constants.GCM_IV_LENGTH);
+            SecretKey secretKey       = generateSecretKey();
+            
+            /* START */
+            x_passphraseKey           = PrivateData.
+            		PassphraseSecrets$hashPassphrase(x_passphrase, salt);
+            byte[] encryptedSecretKey = PrivateData.
+            		PassphraseSecrets$encryptSecretKey(x_passphraseKey, iv, secretKey.getEncoded());
+            /* END */
+            
+            SerializedSecretsV1 ss    = new SerializedSecretsV1(Constants.VERSION_ZERO, salt, iv, encryptedSecretKey);
+            byte[] preparedSecret     = ss.concatenate();
+            boolean saved             = SecretsManager.saveBytes(ctx, Constants.SHARED_PREFS_SECRETS, preparedSecret);
+
+            SecretsManager.setInitialized(ctx, saved);
+
+            return new PassphraseSecrets(secretKey);
+        } catch (GeneralSecurityException e ) {
+            Log.e(TAG, "initializeSecrets failed: " +e.getClass().getName() + " : " + e.getMessage());
+            return null;
+        } finally {
+            //Wiper.wipe(x_passphrase);
+            //Wiper.wipe(x_passphraseKey);
+        }
+    }
+    
     public static PassphraseSecrets fetchSecrets(Context ctx, char[] x_passphrase)
             throws GeneralSecurityException {
         byte[] x_rawSecretKey = null;
@@ -93,6 +127,39 @@ public class PassphraseSecrets implements ICachedSecrets {
             return new PassphraseSecrets(x_rawSecretKey);
         } finally {
             Wiper.wipe(x_passphrase);
+            Wiper.wipe(x_rawSecretKey);
+        }
+    }
+
+    /* Added by Lucia */
+    public static PassphraseSecrets fetchSecrets(Context ctx, PrivateDataHandler x_passphrase)
+            throws GeneralSecurityException {
+        byte[] x_rawSecretKey = null;
+        try {
+            byte[] preparedSecret  = SecretsManager.getBytes(ctx, Constants.SHARED_PREFS_SECRETS);
+            SerializedSecretsV1 ss = new SerializedSecretsV1(preparedSecret);
+            ss.parse();
+
+            byte[] salt                   = ss.salt;
+            byte[] iv                     = ss.iv;
+            byte[] ciphertext             = ss.ciphertext;
+//            int    version                = ss.version; // TODO unused for now
+            
+            /* START */
+            /*
+            SecretKeySpec x_passphraseKey = hashPassphrase(x_passphrase, salt);
+            x_rawSecretKey                = decryptSecretKey(x_passphraseKey, iv, ciphertext); 
+            */
+           
+            PrivateDataHandler x_passphraseKey = PrivateData.
+            		PassphraseSecrets$hashPassphrase(x_passphrase, salt);
+            x_rawSecretKey = PrivateData.
+            		PassphraseSecrets$decryptSecretKey(x_passphraseKey, iv, ciphertext);
+            /* END */
+
+            return new PassphraseSecrets(x_rawSecretKey);
+        } finally {
+            //Wiper.wipe(x_passphrase);
             Wiper.wipe(x_rawSecretKey);
         }
     }
@@ -242,3 +309,4 @@ public class PassphraseSecrets implements ICachedSecrets {
     }
 
 }
+

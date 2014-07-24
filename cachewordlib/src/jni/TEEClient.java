@@ -3,8 +3,10 @@ package jni;
 import info.guardianproject.cacheword.Constants;
 import info.guardianproject.cacheword.Wiper;
 
+import java.lang.reflect.Field;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.HashSet;
 
 import javax.crypto.Cipher;
@@ -16,82 +18,99 @@ import javax.crypto.spec.SecretKeySpec;
 
 import android.util.Log;
 
-public class PrivateData {
+public class TEEClient {
     private static String newPassphrase;
-    private static HashSet<PrivateDataHandler> handlers = new HashSet<PrivateDataHandler>();
+    private static HashSet<TEEObject> handlers = new HashSet<TEEObject>();
     
-    public static PrivateDataHandler add(Object obj) {
+    public static TEEObject newTEEObjectFromData(Object obj) {
 
-        Log.e("LUCIA", "PrivateData.add()");
-        PrivateDataHandler handler = new PrivateDataHandler(obj);
+        //Log.e("LUCIA", "PrivateData.add()");
+        TEEObject handler = new TEEObject(obj);
         handlers.add(handler);
         return handler;
     }
     
+    public static String getStringFromTEEObject(TEEObject teeObj) {
+    	return (String)teeObj.getData();
+    }
+    
+    public static byte[] getByteArrayFromTEEObject(TEEObject teeObj) {
+    	return (byte[])teeObj.getData();
+    }
+    
+    public static char[] getCharArrayFromTEEObject(TEEObject teeObj) {
+    	return (char [])teeObj.getData();
+    }
+    
+    public static SecretKeySpec getSecretKeyFromTEEObject(TEEObject teeObj) {
+    	return (SecretKeySpec)teeObj.getData();
+    }
+    
     public static boolean LockScreenActivity$newEqualsConfirmation(
-            PrivateDataHandler mHandler1, 
-            PrivateDataHandler mHandler2) {
+            TEEObject teeObj1, 
+            TEEObject teeObj2) {
 
-        Log.e("LUCIA", "PrivateData.LockScreenActivity$newEqualsConfirmation");
-        return ((String)mHandler1.getData()).equals(
-                (String)mHandler2.getData());
+        //Log.e("LUCIA", "PrivateData.LockScreenActivity$newEqualsConfirmation");
+    	String s1 = getStringFromTEEObject(teeObj1);
+    	String s2 = getStringFromTEEObject(teeObj2);
+        return s1.equals(s2);
     }
 
-    public static boolean LockScreenActivity$isPasswordFieldEmpty(PrivateDataHandler mHandler) {
+    public static boolean LockScreenActivity$isPasswordFieldEmpty(TEEObject teeObj) {
 
-        Log.e("LUCIA", "PrivateData.LockScreenActivity$isPasswordFieldEmpty");
-        return ((String)mHandler.getData()).length() == 0;
+        //Log.e("LUCIA", "PrivateData.LockScreenActivity$isPasswordFieldEmpty");
+        return (getStringFromTEEObject(teeObj)).length() == 0;
     }
 
-    public static PrivateDataHandler LockScreenActivity$isPasswordValid(
-            PrivateDataHandler mHandler) {
+    public static TEEObject LockScreenActivity$isPasswordValid(
+            TEEObject teeObject) {
 
-        Log.e("LUCIA", "PrivateData.LockScreenActivity$isPasswordValid");
-        char[] tmp = ((String)mHandler.getData()).toCharArray();
-        PrivateDataHandler tmpHandler = add(tmp);
+        //Log.e("LUCIA", "PrivateData.LockScreenActivity$isPasswordValid");
+        char[] tmp = (getStringFromTEEObject(teeObject)).toCharArray();
+        TEEObject tmpHandler = newTEEObjectFromData(tmp);
         return tmpHandler;
     }
 
     public static boolean LockScreenActivity$validatePassword(
-            PrivateDataHandler handler, int minPassLength) {
+            TEEObject teeObj, int minPassLength) {
 
-        Log.e("LUCIA", "PrivateData.LockScreenActivity$validatePassword");
-        char[] pass = (char[])handler.getData();
+        //Log.e("LUCIA", "PrivateData.LockScreenActivity$validatePassword");
+        char[] pass = getCharArrayFromTEEObject(teeObj);
         return (pass.length < minPassLength && pass.length != 0);
     }
 
     public static boolean LockScreenActivity$initializeWithPassphrase1(
-            PrivateDataHandler passphrase) {
+            TEEObject passphrase) {
 
-        Log.e("LUCIA", "PrivateData.LockScreenActivity$initializeWithPassphrase1");
-        return ((String)passphrase.getData()).isEmpty();
+        //Log.e("LUCIA", "PrivateData.LockScreenActivity$initializeWithPassphrase1");
+        return getStringFromTEEObject(passphrase).isEmpty();
     }
 
-    public static PrivateDataHandler LockScreenActivity$initializeWithPassphrase2(
-            PrivateDataHandler passphrase) {
-        Log.e("LUCIA", "PrivateData.LockScreenActivity$initializeWithPassphrase2");
-        char[] tmp = ((String)passphrase.getData()).toCharArray();
-        return add(tmp);
+    public static TEEObject LockScreenActivity$initializeWithPassphrase2(
+            TEEObject passphrase) {
+        //Log.e("LUCIA", "PrivateData.LockScreenActivity$initializeWithPassphrase2");
+        char[] tmp = getStringFromTEEObject(passphrase).toCharArray();
+        return newTEEObjectFromData(tmp);
     }
 
     public static boolean LockScreenActivity$isConfirmationFieldEmpty(
-            PrivateDataHandler mConfirmPassphraseHandler) {
-        Log.e("LUCIA", "PrivateData.LockScreenActivity$isConfirmationFieldEmpty");
-        return ((String)mConfirmPassphraseHandler.getData()).isEmpty();
+            TEEObject mConfirmPassphraseTEE) {
+        //Log.e("LUCIA", "PrivateData.LockScreenActivity$isConfirmationFieldEmpty");
+        return (getStringFromTEEObject(mConfirmPassphraseTEE)).isEmpty();
     }
 
     /* TODO: Provide C alternative */
-	public static PrivateDataHandler PassphraseSecrets$hashPassphrase(
-			PrivateDataHandler x_password_handler, byte[] salt) throws GeneralSecurityException {
-        Log.e("LUCIA", "PrivateData.PassphraseSecrets$hashPassphrase");
+	public static TEEObject PassphraseSecrets$hashPassphrase(
+			TEEObject x_password_tee, byte[] salt) throws GeneralSecurityException {
+        //Log.e("LUCIA", "PrivateData.PassphraseSecrets$hashPassphrase");
 
-		char[] x_password = (char[]) x_password_handler.getData();
+		char[] x_password = getCharArrayFromTEEObject(x_password_tee);
 		PBEKeySpec x_spec = null;
         try {
             x_spec                   = new PBEKeySpec(x_password, salt, Constants.PBKDF2_ITER_COUNT, Constants.PBKDF2_KEY_LEN);
             SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
 
-            return PrivateData.add(new SecretKeySpec(factory.generateSecret(x_spec).getEncoded(), "AES"));
+            return TEEClient.newTEEObjectFromData(new SecretKeySpec(factory.generateSecret(x_spec).getEncoded(), "AES"));
         } finally {
             Wiper.wipe(x_spec);
         }
@@ -100,10 +119,10 @@ public class PrivateData {
 
     /* TODO: Provide C alternative */
 	public static byte[] PassphraseSecrets$decryptSecretKey(
-			PrivateDataHandler x_passphraseKeyHandler, byte[] iv, byte[] ciphertext) 
+			TEEObject x_passphraseKeyTEE, byte[] iv, byte[] ciphertext) 
 					throws GeneralSecurityException {
-        Log.e("LUCIA", "PrivateData.PassphraseSecrets$decryptSecretKey");
-		SecretKey x_passphraseKey = (SecretKey) x_passphraseKeyHandler.getData();
+        //Log.e("LUCIA", "PrivateData.PassphraseSecrets$decryptSecretKey");
+		SecretKey x_passphraseKey = getSecretKeyFromTEEObject(x_passphraseKeyTEE);
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         cipher.init(Cipher.DECRYPT_MODE, x_passphraseKey, new IvParameterSpec(iv));
 
@@ -113,9 +132,9 @@ public class PrivateData {
 
     /* TODO: Provide C alternative */
 	public static byte[] PassphraseSecrets$encryptSecretKey(
-			PrivateDataHandler x_passphraseKeyHandler, byte[] iv, byte[] data) throws GeneralSecurityException {
-        Log.e("LUCIA", "PrivateData.PassphraseSecrets$encryptSecretKey");
-		SecretKey x_passphraseKey = (SecretKey) x_passphraseKeyHandler.getData();
+			TEEObject x_passphraseKeyTEE, byte[] iv, byte[] data) throws GeneralSecurityException {
+        //Log.e("LUCIA", "PrivateData.PassphraseSecrets$encryptSecretKey");
+		SecretKey x_passphraseKey = (SecretKey) getSecretKeyFromTEEObject(x_passphraseKeyTEE);
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
 
         // TODO(abel) follow this rabbit hole down and wipe it!
@@ -123,5 +142,45 @@ public class PrivateData {
 
         return cipher.doFinal(data);
     }
+	
+	 public static void Wiper$wipeBytes(TEEObject teeObj) {
+		 byte[] bytes = getByteArrayFromTEEObject(teeObj);
+	     if (bytes == null) return;
+	        Arrays.fill(bytes, (byte) 0);
+	}
+	 
+	public static void Wiper$wipeChars(TEEObject teeObj) {
+		char[] chars = getCharArrayFromTEEObject(teeObj);
+		if(chars == null) return;
+        	Arrays.fill(chars, '\0');
+    }
+
+	public static void Wiper$wipeSecretKeySpec(TEEObject teeObj) {
+        /*for( Field field : SecretKeySpec.class.getDeclaredFields() ) {
+        Log.d("Wiper", "SecretKeySpec field: " + field.getName());
+    	}*/
+		SecretKeySpec key = getSecretKeyFromTEEObject(teeObj);
+		if( key == null ) return;
+	
+	    try {
+	        Field key_field = SecretKeySpec.class.getDeclaredField("key");
+	        key_field.setAccessible(true);
+	        byte[] bytes = (byte[]) key_field.get(key);
+	        TEEObject bytesTEE = newTEEObjectFromData(bytes);
+	        Wiper$wipeBytes(bytesTEE);
+	    } catch (SecurityException e) {
+	        // TODO Auto-generated catch block
+	        e.printStackTrace();
+	    } catch (NoSuchFieldException e) {
+	        // TODO Auto-generated catch block
+	        e.printStackTrace();
+	    } catch (IllegalArgumentException e) {
+	        // TODO Auto-generated catch block
+	        e.printStackTrace();
+	    } catch (IllegalAccessException e) {
+	        // TODO Auto-generated catch block
+	        e.printStackTrace();
+	    }	
+	}
 }
 

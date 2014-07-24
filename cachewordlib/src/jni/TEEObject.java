@@ -1,9 +1,9 @@
 package jni;
 
-public class PrivateDataHandler {
+public class TEEObject {
     private Object privateData;
     
-    protected PrivateDataHandler(Object data) {
+    protected TEEObject(Object data) {
         privateData = data;
     }
     
@@ -15,7 +15,7 @@ public class PrivateDataHandler {
         return String.valueOf(hashCode());
     }
     
-    public Object getData() {
+    protected Object getData() {
         return privateData;
     }
 }

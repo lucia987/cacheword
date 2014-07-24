@@ -14,8 +14,8 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import jni.PrivateData;
-import jni.PrivateDataHandler;
+import jni.TEEClient;
+import jni.TEEObject;
 import android.content.Context;
 import android.util.Log;
 
@@ -78,18 +78,18 @@ public class PassphraseSecrets implements ICachedSecrets {
     }
 
     /* Added by Lucia */
-    public static PassphraseSecrets initializeSecrets(Context ctx, PrivateDataHandler x_passphrase) {
+    public static PassphraseSecrets initializeSecrets(Context ctx, TEEObject x_passphrase) {
         //SecretKeySpec x_passphraseKey = null;
-        PrivateDataHandler x_passphraseKey = null;
+        TEEObject x_passphraseKey = null;
     	try {
             byte[] salt               = generateSalt(Constants.SALT_LENGTH);
             byte[] iv                 = generateIv(Constants.GCM_IV_LENGTH);
             SecretKey secretKey       = generateSecretKey();
             
             /* START */
-            x_passphraseKey           = PrivateData.
+            x_passphraseKey           = TEEClient.
             		PassphraseSecrets$hashPassphrase(x_passphrase, salt);
-            byte[] encryptedSecretKey = PrivateData.
+            byte[] encryptedSecretKey = TEEClient.
             		PassphraseSecrets$encryptSecretKey(x_passphraseKey, iv, secretKey.getEncoded());
             /* END */
             
@@ -104,8 +104,8 @@ public class PassphraseSecrets implements ICachedSecrets {
             Log.e(TAG, "initializeSecrets failed: " +e.getClass().getName() + " : " + e.getMessage());
             return null;
         } finally {
-            //Wiper.wipe(x_passphrase);
-            //Wiper.wipe(x_passphraseKey);
+            TEEClient.Wiper$wipeChars(x_passphrase);
+            TEEClient.Wiper$wipeSecretKeySpec(x_passphraseKey);
         }
     }
     
@@ -132,7 +132,7 @@ public class PassphraseSecrets implements ICachedSecrets {
     }
 
     /* Added by Lucia */
-    public static PassphraseSecrets fetchSecrets(Context ctx, PrivateDataHandler x_passphrase)
+    public static PassphraseSecrets fetchSecrets(Context ctx, TEEObject x_passphrase)
             throws GeneralSecurityException {
         byte[] x_rawSecretKey = null;
         try {
@@ -151,15 +151,15 @@ public class PassphraseSecrets implements ICachedSecrets {
             x_rawSecretKey                = decryptSecretKey(x_passphraseKey, iv, ciphertext); 
             */
            
-            PrivateDataHandler x_passphraseKey = PrivateData.
+            TEEObject x_passphraseKey = TEEClient.
             		PassphraseSecrets$hashPassphrase(x_passphrase, salt);
-            x_rawSecretKey = PrivateData.
+            x_rawSecretKey = TEEClient.
             		PassphraseSecrets$decryptSecretKey(x_passphraseKey, iv, ciphertext);
             /* END */
 
             return new PassphraseSecrets(x_rawSecretKey);
         } finally {
-            //Wiper.wipe(x_passphrase);
+            TEEClient.Wiper$wipeChars(x_passphrase);
             Wiper.wipe(x_rawSecretKey);
         }
     }

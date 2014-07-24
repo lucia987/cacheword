@@ -3,7 +3,7 @@ package info.guardianproject.cacheword;
 
 import java.security.GeneralSecurityException;
 
-import jni.PrivateDataHandler;
+import jni.TEEObject;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -146,7 +146,7 @@ public class CacheWordHandler {
     }
     
     /* Added by Lucia */
-    public void setPassphrase(PrivateDataHandler passphrase) throws GeneralSecurityException {
+    public void setPassphrase(TEEObject passphrase) throws GeneralSecurityException {
         final PassphraseSecrets ps;
         if(SecretsManager.isInitialized(mContext)) {
             ps = PassphraseSecrets.fetchSecrets(mContext, passphrase);
